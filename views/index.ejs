@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title || 'NexLog - Modern Blogging Platform' %></title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --text-primary: #0f172a;
+            --sidebar-bg: #f9fafb;
+            --accent-color: #3b82f6;
+            --text-muted: #374151;
+            --input-bg: #f9fafb;
+            --input-border: #e5e7eb;
+            --input-text: #0f172a;
+            --input-placeholder: var(--text-muted);
+            --placeholder-opacity: 0.7;
+        }
+        .dark-mode {
+            --bg-primary: #111827;
+            --text-primary: #f9fafb;
+            --sidebar-bg: #0f172a;
+            --accent-color: #60a5fa;
+            --text-muted: #9ca3af;
+            --input-bg: #0b1220;
+            --input-border: #1f2937;
+            --input-text: #f9fafb;
+            --input-placeholder: var(--text-muted);
+            --placeholder-opacity: 0.5;
+        }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; background-color: var(--bg-primary); color: var(--text-primary); }
+        input, textarea, select { color: var(--input-text); background-color: var(--input-bg); border: 1px solid var(--input-border); caret-color: var(--accent-color); }
+        input::placeholder, textarea::placeholder { color: var(--input-placeholder); opacity: var(--placeholder-opacity); }
+        .muted { color: var(--text-muted); }
+        .sidebar { background-color: var(--sidebar-bg); color: var(--text-primary); }
+        .sidebar .sidebar-link { color: var(--text-primary); }
+        .sidebar .sidebar-link.active { background-color: var(--accent-color); color: white; }
+        .brand { color: var(--accent-color) !important; }
+        .hidden { display: none !important; }
+        .card { background-color: var(--sidebar-bg); border-radius: 1rem; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body class="min-h-screen <%= darkMode ? 'dark-mode' : '' %>">
+
+    <!-- Server-side data for client init -->
+    <script id="__server-data" type="application/json"><%- JSON.stringify({ user: !!user, view: view || 'home', darkMode: !!darkMode, userId: user ? user.id : null, userEmail: user ? user.email : null, posts: posts || [] }) %></script>
+
+    <% if (!user) { %>
+    <!-- LOGIN / SIGNUP SECTION -->
+    <div id="auth-section" class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+        <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+            <div id="login-form">
+                <h2 class="text-3xl font-bold text-center text-blue-600 mb-8">Welcome Back</h2>
+                <form method="POST" action="/login" class="space-y-4">
+                    <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="password" name="password" placeholder="Password" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">Log In</button>
+                    <div class="flex justify-between text-sm text-blue-600 font-medium">
+                        <button type="button" onclick="showAuth('signup')">New Account?</button>
+                        <button type="button" onclick="showAuth('forgot')">Forgot Password?</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="forgot-form" class="hidden">
+                <h2 class="text-3xl font-bold text-center text-blue-600 mb-8">Reset Password</h2>
+                <p class="text-sm muted mb-6 text-center">Enter your email to receive a reset link.</p>
+                <div class="space-y-4">
+                    <input type="email" placeholder="Enter Email" class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600">
+                    <button onclick="alert('Reset link sent!')" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">Send Link</button>
+                    <button onclick="showAuth('login')" class="w-full text-blue-600 text-sm font-medium">Back to Login</button>
+                </div>
+            </div>
+
+            <div id="signup-form" class="hidden">
+                <h2 class="text-3xl font-bold text-center text-blue-600 mb-8">Create Account</h2>
+                <form method="POST" action="/signup" class="space-y-4">
+                    <input type="text" name="name" placeholder="Full Name" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="password" name="password" placeholder="Password" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">Sign Up</button>
+                    <button type="button" onclick="showAuth('login')" class="w-full text-blue-600 text-sm font-medium">Back to Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <% } else { %>
+    <!-- MAIN APP INTERFACE -->
+    <div id="app-section" class="h-screen flex overflow-hidden">
+        
+        <!-- SIDEBAR -->
+        <aside class="w-64 sidebar border-r border-gray-200 dark:border-gray-700 flex flex-col">
+            <div class="p-6">
+                <h1 class="text-2xl font-black tracking-tighter brand">NexLog <span class="text-sm font-medium">- <%= user.name %></span></h1>
+            </div>
+            <nav class="flex-1 px-4 space-y-2">
+                <button onclick="showView('profile')" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center space-x-3 transition">
+                    <span>👤 Profile</span>
+                </button>
+                <button onclick="showView('settings')" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center space-x-3 transition">
+                    <span>⚙️ Settings</span>
+                </button>
+                <div class="relative">
+                    <button id="new-post-btn" onclick="toggleNewPostMenu()" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center justify-between space-x-3 transition">
+                        <span>✍️ New Post</span>
+                        <span style="font-size:12px">▾</span>
+                    </button>
+                    <div id="new-post-menu" class="hidden absolute left-0 mt-2 w-full bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow z-50">
+                        <button onclick="showView('create'); toggleNewPostMenu();" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700">Create Post</button>
+                        <button onclick="showView('my-posts'); toggleNewPostMenu();" class="w-full text-left p-3 hover:bg-gray-100 dark:hover:bg-gray-700">My Posts</button>
+                    </div>
+                </div>
+                <button onclick="showView('stats')" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center space-x-3 transition">
+                    <span>📊 Stats</span>
+                </button>
+                <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex items-center space-x-3 hover:bg-gray-200 dark:hover:bg-gray-800 transition">
+                    <span id="theme-icon"><%= darkMode ? '☀️ Light Theme' : '🌙 Dark Theme' %></span>
+                </button>
+            </nav>
+            <div class="p-4">
+                <form method="POST" action="/logout" class="w-full">
+                    <button type="submit" class="w-full p-3 text-red-500 font-medium hover:bg-red-50 rounded-xl transition">Log Out</button>
+                </form>
+            </div>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto p-8">
+            
+            <!-- HOME VIEW -->
+            <div id="view-home" class="max-w-4xl mx-auto space-y-12 py-12">
+                <h2 class="text-4xl font-bold">What would you like to do today?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div onclick="showView('create')" class="card p-8 cursor-pointer border-2 border-blue-500 flex flex-col items-center text-center">
+                        <div class="text-5xl mb-4">✍️</div>
+                        <h3 class="text-2xl font-bold">Create Blog</h3>
+                        <p class="muted mt-2">Share your thoughts with the world.</p>
+                    </div>
+                    <div onclick="showView('read')" class="card p-8 cursor-pointer border-2 border-indigo-500 flex flex-col items-center text-center">
+                        <div class="text-5xl mb-4">📚</div>
+                        <h3 class="text-2xl font-bold">Read Blogs</h3>
+                        <p class="muted mt-2">Discover inspiring stories from others.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PROFILE VIEW -->
+            <div id="view-profile" class="hidden max-w-2xl mx-auto space-y-8">
+                <h2 class="text-3xl font-bold">Edit Profile</h2>
+                <div class="card p-8 space-y-6 shadow-sm">
+                    <div class="flex items-center space-x-6">
+                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-4xl">📸</div>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Change Photo</button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-4">
+                        <label class="block">
+                            <span class="muted text-sm">Full Name</span>
+                            <input type="text" value="<%= user.name || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                        </label>
+                        <label class="block">
+                            <span class="muted text-sm">Contact (Email/Social)</span>
+                            <input type="text" value="<%= user.contact || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                        </label>
+                        <label class="block">
+                            <span class="muted text-sm">Bio / Description</span>
+                            <textarea rows="3" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);"><%= user.bio || '' %></textarea>
+                        </label>
+                        <label class="block">
+                            <span class="muted text-sm">Describe your passion in 3 words</span>
+                            <input type="text" value="<%= (user.passions || []).join(', ') %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                        </label>
+                    </div>
+                    <button onclick="alert('Profile Updated!')" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- SETTINGS VIEW -->
+            <div id="view-settings" class="hidden max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold mb-8">Settings</h2>
+                <div class="card p-6 divide-y dark:divide-gray-700">
+                    <div class="py-4 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold">Dark Theme</h4>
+                            <p class="text-sm muted">Toggle dark mode interface</p>
+                        </div>
+                        <button onclick="toggleTheme()" class="bg-blue-600 text-white px-4 py-1 rounded-full text-xs">Switch</button>
+                    </div>
+                    <div class="py-4 flex justify-between items-center">
+                        <div>
+                            <h4 class="font-bold">Account Visibility</h4>
+                            <p class="text-sm muted">Make your profile public</p>
+                        </div>
+                        <input type="checkbox" <%= user.settings && user.settings.public ? 'checked' : '' %>>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CREATE BLOG VIEW -->
+            <div id="view-create" class="hidden max-w-4xl mx-auto space-y-6">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-3xl font-bold">New Post</h2>
+                    <button onclick="savePost()" class="bg-blue-600 text-white px-8 py-2 rounded-full font-bold">Publish</button>
+                </div>
+                <input id="post-title" type="text" placeholder="Title of your blog..." class="text-4xl font-bold bg-transparent w-full outline-none border-b py-4">
+                <textarea id="post-content" rows="15" placeholder="Start writing your story here..." class="w-full bg-transparent text-lg outline-none resize-none"></textarea>
+            </div>
+
+            <!-- READ VIEW -->
+            <div id="view-read" class="hidden max-w-4xl mx-auto space-y-8">
+                <h2 class="text-3xl font-bold">Explore Content</h2>
+                <div id="blog-list" class="grid gap-6">
+                    <% if (posts && posts.length) { %>
+                        <% posts.forEach(function(post){ %>
+                            <div class="card p-6 border dark:border-gray-700">
+                                <span class="<%= post.categoryColorClass || 'text-blue-600' %> text-xs font-bold"><%= post.category || 'UNCATEGORIZED' %></span>
+                                <h3 class="text-xl font-bold mt-2"><%= post.title %></h3>
+                                <p class="muted mt-2"><%= post.excerpt %></p>
+                                <button class="mt-4 text-sm font-bold">Read More →</button>
+                            </div>
+                        <% }) %>
+                    <% } else { %>
+                        <div class="card p-6 border dark:border-gray-700">
+                            <span class="text-blue-600 text-xs font-bold">TECHNOLOGY</span>
+                            <h3 class="text-xl font-bold mt-2">The Future of AI in Blogging</h3>
+                            <p class="muted mt-2">Artificial Intelligence is changing the way we create content...</p>
+                            <button class="mt-4 text-sm font-bold">Read More →</button>
+                        </div>
+                        <div class="card p-6 border dark:border-gray-700">
+                            <span class="text-indigo-600 text-xs font-bold">LIFESTYLE</span>
+                            <h3 class="text-xl font-bold mt-2">Mindful Morning Routines</h3>
+                            <p class="muted mt-2">How to start your day with focus and clarity...</p>
+                            <button class="mt-4 text-sm font-bold">Read More →</button>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- MY POSTS VIEW -->
+            <div id="view-my-posts" class="hidden max-w-4xl mx-auto space-y-8">
+                <h2 class="text-3xl font-bold">My Posts</h2>
+                <div id="my-posts-list" class="grid gap-6"></div>
+                <div id="my-posts-empty" class="card p-6 border dark:border-gray-700 hidden">
+                    <h3 class="text-xl font-bold">No posts found</h3>
+                    <p class="muted mt-2">You haven't published any posts yet.</p>
+                    <button onclick="showView('create')" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Write your first post</button>
+                </div>
+            </div>
+
+            <!-- STATS VIEW -->
+            <div id="view-stats" class="hidden max-w-4xl mx-auto space-y-8">
+                <h2 class="text-3xl font-bold">Your Analytics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="card p-6 text-center border">
+                        <p class="muted text-sm">Total Views</p>
+                        <p class="text-4xl font-bold text-blue-600"><%= stats.views || '0' %></p>
+                    </div>
+                    <div class="card p-6 text-center border">
+                        <p class="muted text-sm">Average Read Time</p>
+                        <p class="text-4xl font-bold text-indigo-600"><%= stats.avgReadTime || '0m 0s' %></p>
+                    </div>
+                    <div class="card p-6 text-center border">
+                        <p class="muted text-sm">New Followers</p>
+                        <p class="text-4xl font-bold text-green-600"><%= stats.newFollowers ? ('+' + stats.newFollowers) : '+0' %></p>
+                    </div>
+                </div>
+                <div class="card p-8 h-64 flex items-end space-x-2 border">
+                    <div class="flex-1 bg-blue-400 h-1/2 rounded-t"></div>
+                    <div class="flex-1 bg-blue-400 h-3/4 rounded-t"></div>
+                    <div class="flex-1 bg-blue-600 h-full rounded-t"></div>
+                    <div class="flex-1 bg-blue-400 h-2/3 rounded-t"></div>
+                    <div class="flex-1 bg-blue-500 h-4/5 rounded-t"></div>
+                    <div class="flex-1 bg-blue-300 h-1/3 rounded-t"></div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+    <% } %>
+
+    <script>
+        // Authentication Switching
+        function showAuth(type) {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('signup-form').classList.add('hidden');
+            document.getElementById('forgot-form').classList.add('hidden');
+            document.getElementById(type + '-form').classList.remove('hidden');
+        }
+
+       
+        function showView(viewId) {
+            const views = ['home', 'profile', 'settings', 'create', 'read', 'my-posts', 'stats'];
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById('view-' + viewId);
+            if (target) target.classList.remove('hidden');
+            if (viewId === 'my-posts') renderMyPosts();
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.innerText.toLowerCase().includes(viewId)) link.classList.add('active');
+            });
+        }
+
+        // Theme Management
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const icon = document.getElementById('theme-icon');
+            if (document.body.classList.contains('dark-mode')) icon.innerText = "☀️ Light Theme"; else icon.innerText = "🌙 Dark Theme";
+        }
+
+        // Track editing state
+        var currentEditingPostId = null;
+
+        // Blog Creation/Update
+        function savePost() {
+            const title = document.getElementById('post-title').value;
+            const content = document.getElementById('post-content').value;
+            if (!title || !content) { alert("Please add both a title and content."); return; }
+
+            // Build post payload
+            const payload = {
+                title: title,
+                content: content,
+                excerpt: content.substring(0, 140),
+                category: 'Uncategorized',
+                authorId: window.__CURRENT_USER_ID || null,
+                authorEmail: window.__CURRENT_USER_EMAIL || null
+            };
+
+            if (currentEditingPostId) {
+                // Update existing post on server
+                fetch('/posts/' + currentEditingPostId, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(r => r.json()).then(data => {
+                    if (data && data.ok) {
+                        // update client state
+                        window.__BLOG_POSTS = window.__BLOG_POSTS || [];
+                        const idx = window.__BLOG_POSTS.findIndex(p => p.id === currentEditingPostId);
+                        if (idx !== -1) window.__BLOG_POSTS[idx] = data.post;
+                        alert('Post updated successfully!');
+                        currentEditingPostId = null;
+                        document.getElementById('post-title').value = '';
+                        document.getElementById('post-content').value = '';
+                        const publishBtn = document.querySelector('#view-create button[onclick="savePost()"]');
+                        if (publishBtn) publishBtn.innerText = 'Publish';
+                        showView('my-posts');
+                    } else {
+                        alert('Could not update post');
+                    }
+                }).catch(() => alert('Could not contact server'));
+            } else {
+                // Create new post on server
+                fetch('/posts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(r => r.json()).then(data => {
+                    if (data && data.ok) {
+                        window.__BLOG_POSTS = window.__BLOG_POSTS || [];
+                        window.__BLOG_POSTS.unshift(data.post);
+
+                        const blogList = document.getElementById('blog-list');
+                        if (blogList) {
+                            const newBlog = document.createElement('div');
+                            newBlog.className = "card p-6 border dark:border-gray-700";
+                            newBlog.innerHTML = `
+                                <span class="text-green-600 text-xs font-bold uppercase">JUST PUBLISHED</span>
+                                <h3 class="text-xl font-bold mt-2">${title}</h3>
+                                <p class="muted mt-2">${content.substring(0, 100)}...</p>
+                                <button class="mt-4 text-sm font-bold">Read More →</button>
+                            `;
+                            blogList.prepend(newBlog);
+                        }
+
+                        alert('Blog published successfully!');
+                        document.getElementById('post-title').value = '';
+                        document.getElementById('post-content').value = '';
+                        showView('read');
+                    } else {
+                        alert('Could not save post');
+                    }
+                }).catch(() => alert('Could not contact server'));
+            }
+        }
+
+        // Edit post
+        function editPost(postId) {
+            const posts = window.__BLOG_POSTS || [];
+            const post = posts.find(p => p.id === postId);
+            if (!post) return;
+            
+            currentEditingPostId = postId;
+            document.getElementById('post-title').value = post.title;
+            document.getElementById('post-content').value = post.content;
+            
+            const publishBtn = document.querySelector('#view-create button[onclick="savePost()"]');
+            if (publishBtn) publishBtn.innerText = "Update";
+            
+            showView('create');
+        }
+
+        // Toggle dropdown menu
+        function toggleNewPostMenu() {
+            const menu = document.getElementById('new-post-menu');
+            if (!menu) return;
+            menu.classList.toggle('hidden');
+        }
+
+        // Render user's posts
+        function renderMyPosts() {
+            const listEl = document.getElementById('my-posts-list');
+            const emptyEl = document.getElementById('my-posts-empty');
+            listEl.innerHTML = '';
+            
+            const posts = window.__BLOG_POSTS || [];
+            const userId = window.__CURRENT_USER_ID;
+            const userEmail = window.__CURRENT_USER_EMAIL;
+
+            const filtered = posts.filter(p => {
+                if (!userId && !userEmail) return false;
+                if (p.authorId && userId && p.authorId == userId) return true;
+                if (p.author && userId && p.author == userId) return true;
+                if (p.authorEmail && userEmail && p.authorEmail == userEmail) return true;
+                return false;
+            });
+
+            if (filtered.length === 0) {
+                emptyEl.classList.remove('hidden');
+                listEl.classList.add('hidden');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            listEl.classList.remove('hidden');
+
+            filtered.forEach(post => {
+                const d = document.createElement('div');
+                d.className = 'card p-6 border dark:border-gray-700';
+                d.innerHTML = `
+                    <span class="text-blue-600 text-xs font-bold">${post.category || 'UNCATEGORIZED'}</span>
+                    <h3 class="text-xl font-bold mt-2">${post.title}</h3>
+                    <p class="muted mt-2">${(post.excerpt || (post.content || '').substring(0, 120))}</p>
+                    <div class="mt-4 flex items-center justify-between">
+                        <small class="muted">${new Date(post.createdAt || Date.now()).toLocaleString()}</small>
+                        <button onclick="editPost('${post.id}')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Edit</button>
+                    </div>
+                `;
+                listEl.appendChild(d);
+            });
+        }
+
+        // Initialize
+        (function() {
+            try {
+                var __serverDataEl = document.getElementById('__server-data');
+                var __serverData = __serverDataEl ? JSON.parse(__serverDataEl.textContent) : {};
+                window.__BLOG_POSTS = __serverData.posts || [];
+                window.__CURRENT_USER_ID = __serverData.userId || null;
+                window.__CURRENT_USER_EMAIL = __serverData.userEmail || null;
+
+                if (__serverData.user) {
+                    document.addEventListener('DOMContentLoaded', function() {
+                        showView(__serverData.view || 'home');
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not parse server data', e);
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Subhadeep Bose",
+    "email": "subhadeepbose2021@gmail.com",
+    "password": "123456",
+    "bio": "",
+    "contact": "",
+    "passions": [],
+    "settings": {
+      "public": true
+    }
+  },
+  {
+    "name": "Srimoyee Pal",
+    "email": "subhadepbose42@gmail.com",
+    "password": "8584911678",
+    "bio": "",
+    "contact": "",
+    "passions": [],
+    "settings": {
+      "public": true
+    }
+  }
+]
