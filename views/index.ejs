@@ -18,6 +18,7 @@
             --input-text: #0f172a;
             --input-placeholder: var(--text-muted);
             --placeholder-opacity: 0.7;
+            --option-opacity: 0.7; /* opacity for post/options sections in light theme */
         }
         .dark-mode {
             --bg-primary: #111827;
@@ -30,6 +31,7 @@
             --input-text: #f9fafb;
             --input-placeholder: var(--text-muted);
             --placeholder-opacity: 0.5;
+            --option-opacity: 0.9; /* slightly higher opacity in dark mode */
         }
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s ease, color 0.3s ease; background-color: var(--bg-primary); color: var(--text-primary); }
         input, textarea, select { color: var(--input-text); background-color: var(--input-bg); border: 1px solid var(--input-border); caret-color: var(--accent-color); }
@@ -42,12 +44,38 @@
         .hidden { display: none !important; }
         .card { background-color: var(--sidebar-bg); border-radius: 1rem; transition: transform 0.2s; }
         .card:hover { transform: translateY(-2px); }
+        /* posts/options container now always fully opaque and bold so background cannot bleed through */
+        .post-options {
+            opacity: 1 !important;
+            font-weight: 700;
+            background-color: var(--bg-primary);
+        }
+        /* keep timestamp lighter if desired */
+        .post-options small {
+            font-weight: 400;
+        }
+        /* dropdown for new post uses our theme variables rather than Tailwind dark: utilities */
+        #new-post-menu {
+            background-color: var(--bg-primary) !important;
+            border-color: var(--input-border) !important;
+            opacity: 1 !important;          /* ensure completely solid */
+            font-weight: 700;               /* bold text by default */
+        }
+        #new-post-menu button {
+            color: var(--text-primary) !important;
+            font-weight: 700;               /* make items bold */
+            background-color: var(--bg-primary) !important; /* solid button bg */
+        }
+        #new-post-menu button:hover {
+            background-color: var(--input-bg) !important; /* subtle hover */
+        }
+
     </style>
 </head>
-<body class="min-h-screen <%= darkMode ? 'dark-mode' : '' %>">
+<body class="min-h-screen <%= darkMode ? 'dark-mode dark' : '' %>">
 
     <!-- Server-side data for client init -->
-    <script id="__server-data" type="application/json"><%- JSON.stringify({ user: !!user, view: view || 'home', darkMode: !!darkMode, userId: user ? user.id : null, userEmail: user ? user.email : null, posts: posts || [] }) %></script>
+    <script id="__server-data" type="application/json"><%- JSON.stringify({ user: !!user, view: view || 'home', darkMode: !!darkMode, userId: user ? user.id : null, userEmail: user ? user.email : null, posts: posts || [], profile: profile || {} }) %></script>
 
     <% if (!user) { %>
     <!-- LOGIN / SIGNUP SECTION -->
@@ -154,28 +182,34 @@
                 <h2 class="text-3xl font-bold">Edit Profile</h2>
                 <div class="card p-8 space-y-6 shadow-sm">
                     <div class="flex items-center space-x-6">
-                        <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-4xl">📸</div>
-                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm">Change Photo</button>
+                        <div id="profile-avatar">
+                            <img id="profile-photo-preview" src="" alt="Profile Photo" class="w-24 h-24 rounded-full object-cover hidden">
+                            <div id="profile-photo-placeholder" class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-4xl">📸</div>
+                        </div>
+                        <div>
+                            <button id="change-photo-btn" type="button" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">Change Photo</button>
+                            <input type="file" id="profile-photo-input" accept="image/*" style="display: none;">
+                        </div>
                     </div>
                     <div class="grid grid-cols-1 gap-4">
                         <label class="block">
                             <span class="muted text-sm">Full Name</span>
-                            <input type="text" value="<%= user.name || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                            <input type="text" id="profile-name" value="<%= (profile && profile.name) || (user && user.name) || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
                         </label>
                         <label class="block">
                             <span class="muted text-sm">Contact (Email/Social)</span>
-                            <input type="text" value="<%= user.contact || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                            <input type="text" id="profile-contact" value="<%= (profile && profile.contact) || (user && user.contact) || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
                         </label>
                         <label class="block">
                             <span class="muted text-sm">Bio / Description</span>
-                            <textarea rows="3" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);"><%= user.bio || '' %></textarea>
+                            <textarea rows="3" id="profile-bio" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);"><%= (profile && profile.bio) || (user && user.bio) || '' %></textarea>
                         </label>
                         <label class="block">
                             <span class="muted text-sm">Describe your passion in 3 words</span>
-                            <input type="text" value="<%= (user.passions || []).join(', ') %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
+                            <input type="text" id="profile-passions" value="<%= (profile && profile.passions && profile.passions.join(', ')) || (user && user.passions && user.passions.join(', ')) || '' %>" class="w-full mt-1 p-2 rounded border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);">
                         </label>
                     </div>
-                    <button onclick="alert('Profile Updated!')" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
+                    <button onclick="saveProfile()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
                 </div>
             </div>
 
@@ -310,6 +344,7 @@
         // Theme Management
         function toggleTheme() {
             document.body.classList.toggle('dark-mode');
+            document.body.classList.toggle('dark');
             const icon = document.getElementById('theme-icon');
             if (document.body.classList.contains('dark-mode')) icon.innerText = "☀️ Light Theme"; else icon.innerText = "🌙 Dark Theme";
         }
@@ -448,7 +483,7 @@
                     <span class="text-blue-600 text-xs font-bold">${post.category || 'UNCATEGORIZED'}</span>
                     <h3 class="text-xl font-bold mt-2">${post.title}</h3>
                     <p class="muted mt-2">${(post.excerpt || (post.content || '').substring(0, 120))}</p>
-                    <div class="mt-4 flex items-center justify-between">
+                    <div class="mt-4 flex items-center justify-between post-options">
                         <small class="muted">${new Date(post.createdAt || Date.now()).toLocaleString()}</small>
                         <button onclick="editPost('${post.id}')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Edit</button>
                     </div>
@@ -456,10 +491,84 @@
                 listEl.appendChild(d);
             });
         }
+        // Handle photo file selection and preview
+        function handlePhotoChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Check if file is an image
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file');
+                return;
+            }
+            
+            // Create a FileReader to preview the image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('profile-photo-preview');
+                const placeholder = document.getElementById('profile-photo-placeholder');
+                
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                
+                // Store the image data for later upload
+                window.__PROFILE_PHOTO_DATA = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // Save Profile Changes
+        function saveProfile() {
+            const name = document.getElementById('profile-name').value;
+            const contact = document.getElementById('profile-contact').value;
+            const bio = document.getElementById('profile-bio').value;
+            const passionsText = document.getElementById('profile-passions').value;
+            
+            // Convert passions text to array
+            const passions = passionsText.split(',').map(p => p.trim()).filter(p => p.length > 0);
+            
+            const payload = {
+                name: name,
+                contact: contact,
+                bio: bio,
+                passions: passions
+            };
+            
+            // Include photo data if selected
+            if (window.__PROFILE_PHOTO_DATA) {
+                payload.photo = window.__PROFILE_PHOTO_DATA;
+            }
+            
+            fetch('/profile/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                if (data && data.ok) {
+                    alert('Profile updated successfully!');
+                } else {
+                    alert('Could not update profile');
+                }
+            }).catch(() => alert('Could not contact server'));
+        }
 
         // Initialize
         (function() {
             try {
+                // Setup photo change button listener
+                const changePhotoBtn = document.getElementById('change-photo-btn');
+                const photoInput = document.getElementById('profile-photo-input');
+                
+                if (changePhotoBtn && photoInput) {
+                    changePhotoBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        photoInput.click();
+                    });
+                    
+                    photoInput.addEventListener('change', handlePhotoChange);
+                }
+                
                 var __serverDataEl = document.getElementById('__server-data');
                 var __serverData = __serverDataEl ? JSON.parse(__serverDataEl.textContent) : {};
                 window.__BLOG_POSTS = __serverData.posts || [];

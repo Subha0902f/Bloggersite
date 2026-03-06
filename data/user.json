@@ -1,24 +1,12 @@
 [
   {
-    "name": "Subhadeep Bose",
+    "id": "1709650000000",
     "email": "subhadeepbose2021@gmail.com",
-    "password": "123456",
-    "bio": "",
-    "contact": "",
-    "passions": [],
-    "settings": {
-      "public": true
-    }
+    "password": "123456"
   },
   {
-    "name": "Srimoyee Pal",
+    "id": "1709650000001",
     "email": "subhadepbose42@gmail.com",
-    "password": "8584911678",
-    "bio": "",
-    "contact": "",
-    "passions": [],
-    "settings": {
-      "public": true
-    }
+    "password": "8584911678"
   }
 ]

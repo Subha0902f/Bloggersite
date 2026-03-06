@@ -33,6 +33,22 @@ function writePosts(posts) {
   fs.writeFileSync(path.join(dataDir, 'post.json'), JSON.stringify(posts, null, 2));
 }
 
+function getAuthorInfo() {
+    try {
+        const data = fs.readFileSync(path.join(dataDir, "desk.json"), "utf8");
+        return JSON.parse(data);
+    } catch (err) {
+        console.error("Error reading desk.json:", err);
+        return {};
+    }
+}
+
+function writeAuthorInfo(authorData) {
+    fs.writeFileSync(path.join(dataDir, 'desk.json'), JSON.stringify(authorData, null, 2));
+}
+
+const author = getAuthorInfo();
+
 /* -------------------- MIDDLEWARE -------------------- */
 
 // tell express to use EJS
@@ -58,11 +74,13 @@ app.use(
 // HOME PAGE
 app.get("/", (req, res) => {
   const posts = readPosts();
+  const profile = getAuthorInfo(); // Load profile data from desk.json
   res.render("index", {
     title: "NexLog - Modern Blogging Platform",
 
     // frontend expects these 👇
     user: req.session.user || null,
+    profile: profile,   // from desk.json
     posts: posts,       // from posts.json
     stats: {},       // later from stats logic
     darkMode: false, // later from user settings
@@ -105,18 +123,22 @@ app.post("/signup", (req, res) => {
     res.redirect("/?error=signup_exists");
   } else {
     const newUser = {
-      name: name,
+      id: Date.now().toString(),
       email: email,
-      password: password, // In real app, hash this
-      bio: "",
-      contact: "",
-      passions: [],
-      settings: {
-        public: true
-      }
+      password: password // In real app, hash this
     };
     users.push(newUser);
     writeUsers(users);
+    
+    // Save initial profile data to desk.json
+    const initialProfile = {
+      name: name,
+      bio: "",
+      contact: "",
+      passions: []
+    };
+    writeAuthorInfo(initialProfile);
+    
     req.session.user = newUser;
     console.log('Signup successful, users now:', users);
     res.redirect("/");
@@ -131,11 +153,68 @@ app.post("/logout", (req, res) => {
   });
 });
 
+// UPDATE PROFILE - Save profile changes to desk.json
+app.post("/profile/update", (req, res) => {
+  try {
+    if (!req.session.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    const { name, bio, contact, passions } = req.body;
+    const currentProfile = getAuthorInfo();
+
+    // Profile data to save to desk.json
+    const profileData = {
+      name: name || currentProfile.name || "",
+      bio: bio || "",
+      contact: contact || "",
+      passions: passions || []
+    };
+
+    // Save profile changes to desk.json
+    writeAuthorInfo(profileData);
+
+    return res.json({ ok: true, profile: profileData });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// LOGOUT
+app.post("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/");
+  });
+});
+
 // RESET - Clear session and go to login
 app.get("/reset", (req, res) => {
   req.session.destroy(() => {
     res.redirect("/");
   });
+});
+
+// API: save author description
+app.post('/author', (req, res) => {
+  try {
+    const authorData = req.body;
+    if (!authorData) return res.status(400).json({ error: 'Missing author data' });
+    
+    writeAuthorInfo(authorData);
+    return res.json({ ok: true, author: authorData });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// API: get author info
+app.get('/author', (req, res) => {
+  try {
+    const authorData = getAuthorInfo();
+    return res.json(authorData);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 // API: get posts as JSON
