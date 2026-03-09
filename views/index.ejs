@@ -70,6 +70,72 @@
             background-color: var(--input-bg) !important; /* subtle hover */
         }
 
+        /* Modal styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border-radius: 1rem;
+            max-width: 90vw;
+            max-height: 90vh;
+            width: 600px;
+            padding: 2rem;
+            position: relative;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+        .modal-overlay.show .modal-content {
+            transform: scale(1);
+        }
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.2s ease;
+        }
+        .modal-close:hover {
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+        }
+
+        /* Ensure modal content wraps properly */
+        #modal-post-content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            max-width: 100%;
+        }
+        #modal-post-content p {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
     </style>
 </head>
 <body class="min-h-screen <%= darkMode ? 'dark-mode dark' : '' %>">
@@ -81,14 +147,18 @@
     <!-- LOGIN / SIGNUP SECTION -->
     <div id="auth-section" class="flex items-center justify-center min-h-screen p-4 bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+            <!-- Error Message Display -->
+            <div id="error-message" class="hidden mb-4 p-4 bg-red-100 border-l-4 border-red-600 text-red-800 rounded-lg whitespace-pre-line text-sm leading-relaxed"></div>
+
             <div id="login-form">
-                <h2 class="text-3xl font-bold text-center text-blue-600 mb-8">Welcome Back</h2>
-                <form method="POST" action="/login" class="space-y-4">
+                <h2 class="text-3xl font-bold text-center text-blue-600 mb-2">Welcome Back</h2>
+                <p class="text-center text-sm muted mb-6">Sign in with your existing account credentials</p>
+                <form method="POST" action="/login" onsubmit="console.log('📝 LOGIN FORM SUBMITTED')" class="space-y-4">
                     <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
                     <input type="password" name="password" placeholder="Password" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
                     <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">Log In</button>
                     <div class="flex justify-between text-sm text-blue-600 font-medium">
-                        <button type="button" onclick="showAuth('signup')">New Account?</button>
+                        <button type="button" onclick="showAuth('signup')">Don't have an account? Create one</button>
                         <button type="button" onclick="showAuth('forgot')">Forgot Password?</button>
                     </div>
                 </form>
@@ -105,13 +175,15 @@
             </div>
 
             <div id="signup-form" class="hidden">
-                <h2 class="text-3xl font-bold text-center text-blue-600 mb-8">Create Account</h2>
-                <form method="POST" action="/signup" class="space-y-4">
+                <h2 class="text-3xl font-bold text-center text-blue-600 mb-2">Create Your Account</h2>
+                <p class="text-center text-sm muted mb-6">Create a new account to get started</p>
+                <form method="POST" action="/signup" onsubmit="console.log('📝 SIGNUP FORM SUBMITTED')" class="space-y-4">
                     <input type="text" name="name" placeholder="Full Name" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
-                    <input type="email" name="email" placeholder="Email Address" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
-                    <input type="password" name="password" placeholder="Password" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="text" name="username" placeholder="Username (must be unique)" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="email" name="email" placeholder="Email Address (used for login)" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <input type="password" name="password" placeholder="Create a password" required class="w-full p-3 rounded-lg border dark:bg-gray-700 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none">
                     <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700 transition">Sign Up</button>
-                    <button type="button" onclick="showAuth('login')" class="w-full text-blue-600 text-sm font-medium">Back to Login</button>
+                    <button type="button" onclick="showAuth('login')" class="w-full text-blue-600 text-sm font-medium">Already have an account? Log in</button>
                 </form>
             </div>
         </div>
@@ -146,6 +218,9 @@
                 <button onclick="showView('stats')" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center space-x-3 transition">
                     <span>📊 Stats</span>
                 </button>
+                <button onclick="showView('search')" class="sidebar-link w-full text-left p-3 rounded-xl flex items-center space-x-3 transition">
+                    <span>🔍 Search People</span>
+                </button>
                 <button onclick="toggleTheme()" class="w-full text-left p-3 rounded-xl flex items-center space-x-3 hover:bg-gray-200 dark:hover:bg-gray-800 transition">
                     <span id="theme-icon"><%= darkMode ? '☀️ Light Theme' : '🌙 Dark Theme' %></span>
                 </button>
@@ -162,8 +237,8 @@
             
             <!-- HOME VIEW -->
             <div id="view-home" class="max-w-4xl mx-auto space-y-12 py-12">
-                <h2 class="text-4xl font-bold">What would you like to do today?</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <h2 class="text-4xl font-bold">Welcome back, <%= user.name %>!</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                     <div onclick="showView('create')" class="card p-8 cursor-pointer border-2 border-blue-500 flex flex-col items-center text-center">
                         <div class="text-5xl mb-4">✍️</div>
                         <h3 class="text-2xl font-bold">Create Blog</h3>
@@ -175,6 +250,31 @@
                         <p class="muted mt-2">Discover inspiring stories from others.</p>
                     </div>
                 </div>
+
+                <!-- User's Recent Posts -->
+                <% if (posts && posts.length > 0) { %>
+                <div class="space-y-6">
+                    <h3 class="text-2xl font-bold">Your Recent Posts</h3>
+                    <div class="grid gap-6">
+                        <% posts.slice(0, 3).forEach(function(post){ %>
+                            <div class="card p-6 border dark:border-gray-700">
+                                <span class="text-blue-600 text-xs font-bold"><%= post.category || 'UNCATEGORIZED' %></span>
+                                <h4 class="text-xl font-bold mt-2"><%= post.title %></h4>
+                                <p class="muted mt-2"><%= post.excerpt %></p>
+                                <div class="mt-4 flex items-center justify-between">
+                                    <small class="muted"><%= new Date(post.createdAt || Date.now()).toLocaleString() %></small>
+                                    <button onclick="editPost('<%= post.id %>')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Edit</button>
+                                </div>
+                            </div>
+                        <% }) %>
+                        <% if (posts.length > 3) { %>
+                            <div class="text-center">
+                                <button onclick="showView('my-posts')" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700">View All Your Posts</button>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
             </div>
 
             <!-- PROFILE VIEW -->
@@ -229,8 +329,11 @@
                             <h4 class="font-bold">Account Visibility</h4>
                             <p class="text-sm muted">Make your profile public</p>
                         </div>
-                        <input type="checkbox" <%= user.settings && user.settings.public ? 'checked' : '' %>>
+                        <input type="checkbox" id="settings-public" <%= user.settings && user.settings.public ? 'checked' : '' %>>
                     </div>
+                </div>
+                <div class="mt-6 text-right">
+                    <button onclick="saveSettings()" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold">Save Changes</button>
                 </div>
             </div>
 
@@ -247,30 +350,26 @@
             <!-- READ VIEW -->
             <div id="view-read" class="hidden max-w-4xl mx-auto space-y-8">
                 <h2 class="text-3xl font-bold">Explore Content</h2>
+
+                <!-- Search Bar -->
+                <div class="card p-6 relative">
+                    <div class="flex gap-4">
+                        <input type="text" id="post-search-input" placeholder="Search posts by title, content, or author..." class="flex-1 p-3 rounded-lg border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);" oninput="getPostSuggestions()">
+                        <button onclick="searchPosts(document.getElementById('post-search-input').value)" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">Search</button>
+                        <button onclick="clearPostSearch()" class="bg-gray-500 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-600">Clear</button>
+                    </div>
+                    <div id="post-suggestions" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hidden"></div>
+
+                    <div id="search-info" class="text-sm text-muted hidden">
+                        <p>Showing search results for: <span id="search-term"></span></p>
+                    </div>
+                </div>
+
                 <div id="blog-list" class="grid gap-6">
-                    <% if (posts && posts.length) { %>
-                        <% posts.forEach(function(post){ %>
-                            <div class="card p-6 border dark:border-gray-700">
-                                <span class="<%= post.categoryColorClass || 'text-blue-600' %> text-xs font-bold"><%= post.category || 'UNCATEGORIZED' %></span>
-                                <h3 class="text-xl font-bold mt-2"><%= post.title %></h3>
-                                <p class="muted mt-2"><%= post.excerpt %></p>
-                                <button class="mt-4 text-sm font-bold">Read More →</button>
-                            </div>
-                        <% }) %>
-                    <% } else { %>
-                        <div class="card p-6 border dark:border-gray-700">
-                            <span class="text-blue-600 text-xs font-bold">TECHNOLOGY</span>
-                            <h3 class="text-xl font-bold mt-2">The Future of AI in Blogging</h3>
-                            <p class="muted mt-2">Artificial Intelligence is changing the way we create content...</p>
-                            <button class="mt-4 text-sm font-bold">Read More →</button>
-                        </div>
-                        <div class="card p-6 border dark:border-gray-700">
-                            <span class="text-indigo-600 text-xs font-bold">LIFESTYLE</span>
-                            <h3 class="text-xl font-bold mt-2">Mindful Morning Routines</h3>
-                            <p class="muted mt-2">How to start your day with focus and clarity...</p>
-                            <button class="mt-4 text-sm font-bold">Read More →</button>
-                        </div>
-                    <% } %>
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                        <p class="mt-2 text-muted">Loading posts...</p>
+                    </div>
                 </div>
             </div>
 
@@ -312,32 +411,135 @@
                 </div>
             </div>
 
+            <!-- SEARCH VIEW -->
+            <div id="view-search" class="hidden max-w-4xl mx-auto space-y-8">
+                <h2 class="text-3xl font-bold">Search People</h2>
+                <div class="card p-6 relative">
+                    <div class="flex gap-4">
+                        <input type="text" id="search-input" placeholder="Search by username or name..." class="flex-1 p-3 rounded-lg border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);" oninput="getPeopleSuggestions()" autocomplete="off">
+                        <button onclick="performSearch()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">Search</button>
+                    </div>
+                    <div id="people-suggestions" class="absolute z-10 w-full mt-1 rounded-lg shadow-lg hidden" style="background-color: var(--bg-primary); border: 1px solid var(--input-border);"></div>
+                    <div id="search-results" class="space-y-4">
+                        <p class="text-muted">Enter a username, name, or email to search for people.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USER PROFILE (PUBLIC) VIEW -->
+            <div id="view-user-profile" class="hidden max-w-2xl mx-auto space-y-8">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 id="public-profile-name" class="text-3xl font-bold">User Profile</h2>
+                        <p id="public-profile-username" class="text-lg muted"></p>
+                    </div>
+                    <button onclick="showView('search')" class="text-sm font-medium text-blue-600 hover:underline">← Back to Search</button>
+                </div>
+                <div class="card p-8 space-y-6 shadow-sm">
+                    <div class="flex items-center space-x-6">
+                        <div id="public-profile-avatar">
+                            <img id="public-profile-photo" src="" alt="Profile Photo" class="w-24 h-24 rounded-full object-cover hidden">
+                            <div id="public-profile-photo-placeholder" class="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center text-4xl text-gray-400">👤</div>
+                        </div>
+                        <div id="public-profile-passions" class="flex flex-wrap gap-2">
+                            <!-- Passions will be injected here -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm muted uppercase tracking-wider">Bio</h4>
+                        <p id="public-profile-bio" class="mt-2 text-base leading-relaxed">This user has not written a bio yet.</p>
+                    </div>
+                    <div id="public-profile-contact-section" class="hidden">
+                        <h4 class="font-bold text-sm muted uppercase tracking-wider">Contact</h4>
+                        <p id="public-profile-contact" class="mt-2 text-base leading-relaxed"></p>
+                    </div>
+                </div>
+                <!-- User's Posts Section -->
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold">Posts by <span id="public-profile-posts-author">this user</span></h3>
+                    
+                    <!-- Blog Search for Public Profile -->
+                    <div class="relative">
+                        <div class="flex gap-4">
+                            <input type="text" id="profile-post-search-input" placeholder="Search this user's posts..." class="flex-1 p-3 rounded-lg border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);" oninput="getProfilePostSuggestions()">
+                            <button onclick="searchProfilePosts()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">Search</button>
+                        </div>
+                        <div id="profile-post-suggestions" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hidden"></div>
+                    </div>
+
+                    <div id="public-profile-posts-list" class="grid gap-6">
+                        <!-- Posts will be injected here -->
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     <% } %>
 
+    <!-- Post Modal -->
+    <div id="post-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closePostModal()">&times;</button>
+            <div id="modal-post-content">
+                <!-- Post content will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <script>
         // Authentication Switching
         function showAuth(type) {
+            console.log('🔐 Switching to:', type);
             document.getElementById('login-form').classList.add('hidden');
             document.getElementById('signup-form').classList.add('hidden');
             document.getElementById('forgot-form').classList.add('hidden');
             document.getElementById(type + '-form').classList.remove('hidden');
+            document.getElementById('error-message').classList.add('hidden');
         }
 
+        // Display error messages from URL parameters
+        function displayAuthError() {
+            const params = new URLSearchParams(window.location.search);
+            const errorMsg = document.getElementById('error-message');
+            
+            if (params.has('error')) {
+                const error = params.get('error');
+                let message = '';
+                
+                if (error === 'login') {
+                    message = '❌ Login Failed: Email or password is incorrect.\n\nIf you don\'t have an account yet, click "Don\'t have an account? Create one" to sign up first.\n\nThen you can use those same credentials to log in.';
+                    showAuth('login');
+                } else if (error === 'signup_email_exists') {
+                    message = '❌ This email is already registered!\n\nYou already have an account with this email. Click "Already have an account? Log in" to sign in instead.';
+                    showAuth('signup');
+                } else if (error === 'signup_username_exists') {
+                    message = '❌ Username already taken!\n\nPlease choose a different username. Each user must have a unique username.';
+                    showAuth('signup');
+                }
+                
+                if (message) {
+                    errorMsg.innerHTML = message.replace(/\n/g, '<br>');
+                    errorMsg.classList.remove('hidden');
+                }
+            }
+        }
        
         function showView(viewId) {
-            const views = ['home', 'profile', 'settings', 'create', 'read', 'my-posts', 'stats'];
-            views.forEach(v => {
+            const views = ['home', 'profile', 'settings', 'create', 'read', 'my-posts', 'stats', 'search'];
+            [...views, 'user-profile'].forEach(v => {
                 const el = document.getElementById('view-' + v);
                 if (el) el.classList.add('hidden');
             });
             const target = document.getElementById('view-' + viewId);
             if (target) target.classList.remove('hidden');
             if (viewId === 'my-posts') renderMyPosts();
+            if (viewId === 'read') renderReadView();
+            // Removed renderSearchResults() call for search view to preserve initial message
             document.querySelectorAll('.sidebar-link').forEach(link => {
                 link.classList.remove('active');
-                if (link.innerText.toLowerCase().includes(viewId)) link.classList.add('active');
+                if (link.innerText.toLowerCase().includes(viewId)) {
+                    link.classList.add('active');
+                }
             });
         }
 
@@ -386,7 +588,7 @@
                         document.getElementById('post-content').value = '';
                         const publishBtn = document.querySelector('#view-create button[onclick="savePost()"]');
                         if (publishBtn) publishBtn.innerText = 'Publish';
-                        showView('my-posts');
+                        window.location.reload(); // Reload to show updated posts
                     } else {
                         alert('Could not update post');
                     }
@@ -418,7 +620,7 @@
                         alert('Blog published successfully!');
                         document.getElementById('post-title').value = '';
                         document.getElementById('post-content').value = '';
-                        showView('read');
+                        window.location.reload(); // Reload to show updated posts on home
                     } else {
                         alert('Could not save post');
                     }
@@ -453,44 +655,540 @@
         function renderMyPosts() {
             const listEl = document.getElementById('my-posts-list');
             const emptyEl = document.getElementById('my-posts-empty');
+            listEl.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p class="mt-2 text-muted">Loading your posts...</p></div>';
+
+            // Load posts from server
+            fetch('/posts')
+                .then(r => r.json())
+                .then(posts => {
+                    window.__BLOG_POSTS = posts;
+                    const userId = window.__CURRENT_USER_ID;
+                    const userEmail = window.__CURRENT_USER_EMAIL;
+
+                    const filtered = posts.filter(p => {
+                        if (!userId && !userEmail) return false;
+                        if (p.authorId && userId && p.authorId == userId) return true;
+                        if (p.author && userId && p.author == userId) return true;
+                        if (p.authorEmail && userEmail && p.authorEmail == userEmail) return true;
+                        return false;
+                    });
+
+                    listEl.innerHTML = '';
+
+                    if (filtered.length === 0) {
+                        emptyEl.classList.remove('hidden');
+                        listEl.classList.add('hidden');
+                        return;
+                    }
+
+                    emptyEl.classList.add('hidden');
+                    listEl.classList.remove('hidden');
+
+                    filtered.forEach(post => {
+                        const d = document.createElement('div');
+                        d.className = 'card p-6 border dark:border-gray-700';
+                        d.innerHTML = `
+                            <span class="text-blue-600 text-xs font-bold">${post.category || 'UNCATEGORIZED'}</span>
+                            <h3 class="text-xl font-bold mt-2">${post.title}</h3>
+                            <p class="muted mt-2">${(post.excerpt || (post.content || '').substring(0, 120))}</p>
+                            <div class="mt-4 flex items-center justify-between post-options">
+                                <small class="muted">${new Date(post.createdAt || Date.now()).toLocaleString()}</small>
+                                <button onclick="editPost('${post.id}')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Edit</button>
+                            </div>
+                        `;
+                        listEl.appendChild(d);
+                    });
+                })
+                .catch(() => {
+                    listEl.innerHTML = '<div class="text-center py-8 text-red-500">Failed to load posts. Please try again.</div>';
+                });
+        }
+
+        // Global variable to store all posts for search
+        let allPublicPosts = [];
+
+        // Render public read view
+        function renderReadView() {
+            const listEl = document.getElementById('blog-list');
+            const searchInfo = document.getElementById('search-info');
+            searchInfo.classList.add('hidden');
+            const postSearchInput = document.getElementById('post-search-input');
+            postSearchInput.value = ''; // Clear search input
+
+            // Load posts from public endpoint (store them for search without displaying)
+            fetch('/posts/public')
+                .then(r => r.json())
+                .then(posts => {
+                    allPublicPosts = posts; // Store for search
+                    // Show empty state - no posts initially
+                    listEl.innerHTML = `
+                        <div class="card p-8 border dark:border-gray-700 text-center">
+                            <div class="text-5xl mb-4">🔍</div>
+                            <h3 class="text-2xl font-bold mb-2">Search for Posts</h3>
+                            <p class="text-muted mb-4">Use the search bar above to find posts by title, content, or author.</p>
+                            <p class="text-sm text-muted">There are <span class="font-bold text-blue-600">${posts.length}</span> posts available to explore.</p>
+                        </div>
+                    `;
+                })
+                .catch(() => {
+                    listEl.innerHTML = '<div class="text-center py-8 text-red-500">Failed to load posts. Please try again.</div>';
+                });
+        }
+
+        // Render post list (used by both initial load and search)
+        function renderPostList(posts) {
+            const listEl = document.getElementById('blog-list');
             listEl.innerHTML = '';
-            
-            const posts = window.__BLOG_POSTS || [];
-            const userId = window.__CURRENT_USER_ID;
-            const userEmail = window.__CURRENT_USER_EMAIL;
 
-            const filtered = posts.filter(p => {
-                if (!userId && !userEmail) return false;
-                if (p.authorId && userId && p.authorId == userId) return true;
-                if (p.author && userId && p.author == userId) return true;
-                if (p.authorEmail && userEmail && p.authorEmail == userEmail) return true;
-                return false;
-            });
-
-            if (filtered.length === 0) {
-                emptyEl.classList.remove('hidden');
-                listEl.classList.add('hidden');
+            if (posts.length === 0) {
+                listEl.innerHTML = `
+                    <div class="card p-6 border dark:border-gray-700 text-center">
+                        <h3 class="text-xl font-bold">No posts found</h3>
+                        <p class="muted mt-2">Try adjusting your search or be the first to share your thoughts!</p>
+                        <button onclick="showView('create')" class="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Write a post</button>
+                    </div>
+                `;
                 return;
             }
 
-            emptyEl.classList.add('hidden');
-            listEl.classList.remove('hidden');
-
-            filtered.forEach(post => {
+            posts.forEach(post => {
                 const d = document.createElement('div');
                 d.className = 'card p-6 border dark:border-gray-700';
+                const excerpt = post.excerpt || (post.content || '').substring(0, 120);
+                const fullContent = post.content || '';
+                const needsReadMore = fullContent.length > excerpt.length;
+                
                 d.innerHTML = `
-                    <span class="text-blue-600 text-xs font-bold">${post.category || 'UNCATEGORIZED'}</span>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-blue-600 text-xs font-bold">${post.category || 'UNCATEGORIZED'}</span>
+                        <span class="text-xs text-muted">by @${post.authorUsername || 'unknown'}</span>
+                    </div>
                     <h3 class="text-xl font-bold mt-2">${post.title}</h3>
-                    <p class="muted mt-2">${(post.excerpt || (post.content || '').substring(0, 120))}</p>
-                    <div class="mt-4 flex items-center justify-between post-options">
+                    <div class="post-content-container">
+                        <p class="muted mt-2 post-content">${excerpt}${needsReadMore ? '...' : ''}</p>
+                        ${needsReadMore ? `<button class="mt-2 text-sm font-bold text-blue-600 hover:text-blue-800 read-more-btn" onclick="openPostModal('${post.id}', '${post.title.replace(/'/g, "\\'")}', '${post.category || 'UNCATEGORIZED'}', '${post.authorUsername || 'unknown'}', '${new Date(post.createdAt || Date.now()).toLocaleString()}')">Read More →</button>` : ''}
+                    </div>
+                    <div class="mt-4 flex items-center justify-between">
                         <small class="muted">${new Date(post.createdAt || Date.now()).toLocaleString()}</small>
-                        <button onclick="editPost('${post.id}')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Edit</button>
                     </div>
                 `;
+                
+                // Store full content in a data attribute for the toggle function
+                if (needsReadMore) {
+                    d.querySelector('.post-content-container').setAttribute('data-full-content', fullContent);
+                    d.querySelector('.post-content-container').setAttribute('data-excerpt', excerpt);
+                }
+                
                 listEl.appendChild(d);
             });
         }
+
+        // Search posts functionality
+        function searchPosts(query) {
+            const searchTerm = (query || document.getElementById('post-search-input').value).trim().toLowerCase();
+            const searchInfo = document.getElementById('search-info');
+            document.getElementById('post-suggestions').classList.add('hidden');
+            const searchTermSpan = document.getElementById('search-term');
+
+            if (!searchTerm) {
+                searchInfo.classList.add('hidden');
+                renderPostList(allPublicPosts);
+                return;
+            }
+
+            // Filter posts based on search term
+            const filteredPosts = allPublicPosts.filter(post => {
+                const title = (post.title || '').toLowerCase();
+                const content = (post.content || '').toLowerCase();
+                const author = (post.authorUsername || '').toLowerCase();
+                const authorName = (post.authorName || '').toLowerCase();
+
+                return title.includes(searchTerm) ||
+                       content.includes(searchTerm) ||
+                       author.includes(searchTerm) ||
+                       authorName.includes(searchTerm);
+            });
+
+            // Show search info
+            searchTermSpan.textContent = `"${query}"`;
+            searchInfo.classList.remove('hidden');
+
+            // Render filtered results
+            renderPostList(filteredPosts);
+        }
+
+        // Clear search functionality
+        function clearPostSearch() {
+            const searchInput = document.getElementById('post-search-input');
+            const searchInfo = document.getElementById('search-info');
+
+            searchInput.value = '';
+            searchInfo.classList.add('hidden');
+            document.getElementById('post-suggestions').classList.add('hidden');
+            renderReadView();
+        }
+
+        // Post suggestions
+        function getPostSuggestions() {
+            const input = document.getElementById('post-search-input');
+            const suggestionsContainer = document.getElementById('post-suggestions');
+            const query = input.value.trim().toLowerCase();
+
+            if (query.length < 2) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            const filtered = allPublicPosts.filter(post => {
+                return (post.title || '').toLowerCase().includes(query) ||
+                       (post.authorUsername || '').toLowerCase().includes(query);
+            }).slice(0, 5); // Limit to 5 suggestions
+
+            if (filtered.length === 0) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            suggestionsContainer.innerHTML = filtered.map(post => `
+                <div class="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer" onclick="searchPosts('${post.title.replace(/'/g, "\\'")}')">
+                    <p class="font-semibold text-gray-800 dark:text-gray-200">${post.title}</p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">by @${post.authorUsername || 'unknown'}</p>
+                </div>
+            `).join('');
+            suggestionsContainer.classList.remove('hidden');
+        }
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(event) {
+            const readView = document.getElementById('view-read');
+            const postSuggestions = document.getElementById('post-suggestions');
+            const searchView = document.getElementById('view-search');
+            const peopleSuggestions = document.getElementById('people-suggestions');
+
+            if (readView && postSuggestions && !readView.contains(event.target)) { postSuggestions.classList.add('hidden'); }
+            if (searchView && peopleSuggestions && !searchView.contains(event.target)) { peopleSuggestions.classList.add('hidden'); }
+            const profileView = document.getElementById('view-user-profile');
+            const profilePostSuggestions = document.getElementById('profile-post-suggestions');
+            if (profileView && profilePostSuggestions && !profileView.contains(event.target)) { profilePostSuggestions.classList.add('hidden'); }
+        });
+
+        // Open post modal
+        function openPostModal(postId, title, category, author, date) {
+            // Find the post data
+            const post = allPublicPosts.find(p => p.id === postId);
+            if (!post) return;
+
+            const modal = document.getElementById('post-modal');
+            const modalContent = document.getElementById('modal-post-content');
+            
+            modalContent.innerHTML = `
+                <div class="flex items-center justify-between mb-4">
+                    <span class="text-blue-600 text-xs font-bold uppercase">${category}</span>
+                    <span class="text-xs text-muted">by @${author}</span>
+                </div>
+                <h2 class="text-2xl font-bold mb-4">${title}</h2>
+                <div class="prose prose-lg max-w-full">
+                    <p class="text-lg leading-relaxed whitespace-pre-line break-words overflow-wrap-anywhere">${post.content}</p>
+                </div>
+                <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <small class="text-muted">${date}</small>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        // Close post modal
+        function closePostModal() {
+            const modal = document.getElementById('post-modal');
+            modal.classList.remove('show');
+            document.body.style.overflow = ''; // Restore scrolling
+        }
+
+        // Close modal when clicking overlay
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('post-modal');
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        closePostModal();
+                    }
+                });
+            }
+            
+            // Close modal with Escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal && modal.classList.contains('show')) {
+                    closePostModal();
+                }
+            });
+        });
+
+        // Search functionality
+        function performSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchResults = document.getElementById('search-results');
+            
+            if (!searchInput || !searchResults) {
+                console.error('Search elements not found');
+                return;
+            }
+            
+            const query = searchInput.value.trim();
+            
+            document.getElementById('people-suggestions').classList.add('hidden');
+
+            document.getElementById('people-suggestions').classList.add('hidden');
+            if (!query) {
+                searchResults.innerHTML = '<p class="text-muted">Please enter a username, name, or email to search.</p>';
+                return;
+            }
+
+            // Show loading
+            searchResults.innerHTML = '<p class="text-muted">Searching...</p>';
+
+            fetch(`/api/search/users?q=${encodeURIComponent(query)}`)
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    renderSearchResults(data.users || []);
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    searchResults.innerHTML = '<p class="text-red-500">Search failed. Please try again.</p>';
+                });
+        }
+
+        // People suggestions
+        function getPeopleSuggestions() {
+            const input = document.getElementById('search-input');
+            const suggestionsContainer = document.getElementById('people-suggestions');
+            const query = input.value.trim();
+
+            if (query.length < 2) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            fetch(`/api/search/users?q=${encodeURIComponent(query)}`)
+                .then(r => r.json())
+                .then(data => {
+                    const users = (data.users || []).slice(0, 5); // Limit to 5
+                    if (users.length === 0) {
+                        suggestionsContainer.classList.add('hidden');
+                        return;
+                    }
+
+                    suggestionsContainer.innerHTML = users.map(user => `
+                        <div class="p-3 cursor-pointer flex items-center space-x-3" style="color: var(--text-primary);" onmouseover="this.style.backgroundColor='var(--input-bg)'" onmouseout="this.style.backgroundColor='var(--bg-primary)'" onclick="viewUserProfile('${user.username.replace(/'/g, "\\'")}')">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm">👤</div>
+                            <div>
+                                <p class="font-semibold">@${user.username}</p>
+                                <p class="text-sm muted">${user.name || ''}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                    suggestionsContainer.classList.remove('hidden');
+                })
+                .catch(() => suggestionsContainer.classList.add('hidden'));
+        }
+
+        function renderSearchResults(users) {
+            const resultsEl = document.getElementById('search-results');
+            
+            if (!users || users.length === 0) {
+                resultsEl.innerHTML = '<p class="text-muted">No users found matching your search.</p>';
+                return;
+            }
+
+            resultsEl.innerHTML = users.map(user => `
+                <div class="card p-4 border dark:border-gray-700 flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-xl">
+                        👤
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-lg">@${user.username}</h3>
+                        <p class="text-muted">${user.name || 'No name provided'}</p>
+                        ${user.bio ? `<p class="text-sm mt-1">${user.bio}</p>` : ''}
+                    </div>
+                    <div class="text-right">
+                        <button onclick="viewUserProfile('${user.username.replace(/'/g, "\\'")}')" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700">
+                            View Profile
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewUserProfile(username) {            
+            const profileView = document.getElementById('view-user-profile');
+            if (!profileView) return;
+
+            // Show loading state
+            showView('user-profile');
+            profileView.innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div><p class="mt-2 text-muted">Loading profile...</p></div>';
+
+            fetch(`/api/users/${username}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.ok || !data.profile) {
+                        profileView.innerHTML = `<p class="text-red-500 text-center">Could not load profile for @${username}. The user may not exist.</p>`;
+                        return;
+                    }
+
+                    const profile = data.profile;
+                    window.__CURRENT_VIEWED_PROFILE_POSTS = profile.posts || [];
+                    
+                    // Restore original HTML structure before populating
+                    profileView.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h2 id="public-profile-name" class="text-3xl font-bold"></h2>
+                                <p id="public-profile-username" class="text-lg muted"></p>
+                            </div>
+                            <button onclick="showView('search')" class="text-sm font-medium text-blue-600 hover:underline">← Back to Search</button>
+                        </div>
+                        <div class="card p-8 space-y-6 shadow-sm">
+                            <div class="flex items-center space-x-6">
+                                <div id="public-profile-avatar">
+                                    <img id="public-profile-photo" src="" alt="Profile Photo" class="w-24 h-24 rounded-full object-cover hidden">
+                                    <div id="public-profile-photo-placeholder" class="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center text-4xl text-gray-400">👤</div>
+                                </div>
+                                <div id="public-profile-passions" class="flex flex-wrap gap-2"></div>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm muted uppercase tracking-wider">Bio</h4>
+                                <p id="public-profile-bio" class="mt-2 text-base leading-relaxed"></p>
+                            </div>
+                            <div id="public-profile-contact-section" class="hidden">
+                                <h4 class="font-bold text-sm muted uppercase tracking-wider">Contact</h4>
+                                <p id="public-profile-contact" class="mt-2 text-base leading-relaxed"></p>
+                            </div>
+                        </div>
+                        <!-- User's Posts Section -->
+                        <div class="space-y-4">
+                            <h3 class="text-2xl font-bold">Posts by <span id="public-profile-posts-author">this user</span></h3>
+                            <div class="relative">
+                                <div class="flex gap-4">
+                                    <input type="text" id="profile-post-search-input" placeholder="Search this user's posts..." class="flex-1 p-3 rounded-lg border" style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--input-text);" oninput="getProfilePostSuggestions()">
+                                    <button onclick="searchProfilePosts()" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">Search</button>
+                                </div>
+                                <div id="profile-post-suggestions" class="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg hidden"></div>
+                            </div>
+                            <div id="public-profile-posts-list" class="grid gap-6">
+                            </div>
+                        </div>`;
+
+                    // Populate the view with the fetched data
+                    document.getElementById('public-profile-name').textContent = profile.name || 'Unnamed User';
+                    document.getElementById('public-profile-username').textContent = `@${profile.username}`;
+                    document.getElementById('public-profile-bio').textContent = profile.bio || 'This user has not written a bio yet.';
+                    
+                    const photoEl = document.getElementById('public-profile-photo');
+                    const placeholderEl = document.getElementById('public-profile-photo-placeholder');
+                    if (profile.photo) {
+                        photoEl.src = profile.photo;
+                        photoEl.classList.remove('hidden');
+                        placeholderEl.classList.add('hidden');
+                    } else {
+                        photoEl.classList.add('hidden');
+                        placeholderEl.classList.remove('hidden');
+                    }
+
+                    const passionsContainer = document.getElementById('public-profile-passions');
+                    passionsContainer.innerHTML = (profile.passions || []).map(p => `<span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">${p}</span>`).join('');
+
+                    // Populate contact info if it exists
+                    const contactSection = document.getElementById('public-profile-contact-section');
+                    if (profile.contact) {
+                        document.getElementById('public-profile-contact').textContent = profile.contact;
+                        contactSection.classList.remove('hidden');
+                    }
+
+                    renderProfilePosts(profile.posts, profile.username);
+                    document.getElementById('public-profile-posts-author').textContent = profile.name || profile.username;
+                })
+                .catch(err => {
+                    console.error('Failed to fetch user profile:', err);
+                    profileView.innerHTML = `<p class="text-red-500 text-center">An error occurred while loading the profile.</p>`;
+                });
+        }
+
+        // Render posts on the public profile page
+        function renderProfilePosts(posts, username) {
+            const postsList = document.getElementById('public-profile-posts-list');
+            if (!postsList) return;
+
+            if (posts && posts.length > 0) {
+                postsList.innerHTML = posts.map(post => {
+                    const excerpt = post.excerpt || (post.content || '').substring(0, 120);
+                    return `
+                        <div class="card p-6 border dark:border-gray-700">
+                            <h4 class="text-xl font-bold">${post.title}</h4>
+                            <p class="muted mt-2">${excerpt}...</p>
+                            <div class="mt-4 flex items-center justify-between">
+                                <small class="muted">${new Date(post.createdAt || Date.now()).toLocaleString()}</small>
+                                <button onclick="openPostModal('${post.id}', '${post.title.replace(/'/g, "\\'")}', '${post.category || 'UNCATEGORIZED'}', '${username}', '${new Date(post.createdAt || Date.now()).toLocaleString()}')" class="text-sm font-bold text-blue-600 hover:text-blue-800">Read More →</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                postsList.innerHTML = `
+                    <div class="card p-6 border dark:border-gray-700 text-center">
+                        <p class="muted">This user hasn't written any posts yet.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Search posts within a user's profile
+        function searchProfilePosts() {
+            const query = document.getElementById('profile-post-search-input').value.trim().toLowerCase();
+            const username = document.getElementById('public-profile-username').textContent.substring(1);
+            document.getElementById('profile-post-suggestions').classList.add('hidden');
+
+            if (!query) {
+                renderProfilePosts(window.__CURRENT_VIEWED_PROFILE_POSTS, username);
+                return;
+            }
+
+            const filteredPosts = (window.__CURRENT_VIEWED_PROFILE_POSTS || []).filter(post => {
+                return (post.title || '').toLowerCase().includes(query) || (post.content || '').toLowerCase().includes(query);
+            });
+
+            renderProfilePosts(filteredPosts, username);
+        }
+
+        // Suggestions for profile post search
+        function getProfilePostSuggestions() {
+            const input = document.getElementById('profile-post-search-input');
+            const suggestionsContainer = document.getElementById('profile-post-suggestions');
+            const query = input.value.trim().toLowerCase();
+
+            if (query.length < 2) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            const filtered = (window.__CURRENT_VIEWED_PROFILE_POSTS || []).filter(post => {
+                return (post.title || '').toLowerCase().includes(query);
+            }).slice(0, 4);
+
+            if (filtered.length === 0) {
+                suggestionsContainer.classList.add('hidden');
+                return;
+            }
+
+            suggestionsContainer.innerHTML = filtered.map(post => `<div class="p-3 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer text-gray-800 dark:text-gray-200" onclick="document.getElementById('profile-post-search-input').value='${post.title.replace(/'/g, "\\'")}'; searchProfilePosts();">${post.title}</div>`).join('');
+            suggestionsContainer.classList.remove('hidden');
+        }
+
         // Handle photo file selection and preview
         function handlePhotoChange(event) {
             const file = event.target.files[0];
@@ -547,8 +1245,31 @@
             }).then(r => r.json()).then(data => {
                 if (data && data.ok) {
                     alert('Profile updated successfully!');
+                    // Clear photo data after successful save
+                    window.__PROFILE_PHOTO_DATA = null;
                 } else {
                     alert('Could not update profile');
+                }
+            }).catch(() => alert('Could not contact server'));
+        }
+
+        // Save Settings Changes
+        function saveSettings() {
+            const isPublic = document.getElementById('settings-public').checked;
+            
+            const payload = {
+                public: isPublic
+            };
+            
+            fetch('/settings/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(r => r.json()).then(data => {
+                if (data && data.ok) {
+                    alert('Settings updated successfully!');
+                } else {
+                    alert('Could not update settings');
                 }
             }).catch(() => alert('Could not contact server'));
         }
@@ -575,11 +1296,45 @@
                 window.__CURRENT_USER_ID = __serverData.userId || null;
                 window.__CURRENT_USER_EMAIL = __serverData.userEmail || null;
 
-                if (__serverData.user) {
-                    document.addEventListener('DOMContentLoaded', function() {
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (__serverData.user) {
+                        // This runs when the user is logged in.
                         showView(__serverData.view || 'home');
-                    });
-                }
+
+                        // Display existing profile photo if available
+                        const profile = __serverData.profile || {};
+                        if (profile.photo) {
+                            const preview = document.getElementById('profile-photo-preview');
+                            const placeholder = document.getElementById('profile-photo-placeholder');
+                            preview.src = profile.photo;
+                            preview.classList.remove('hidden');
+                            placeholder.classList.add('hidden');
+                        }
+
+                        // Add keyboard support for post search
+                        const postSearchInput = document.getElementById('post-search-input');
+                        if (postSearchInput) {
+                            postSearchInput.addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') { 
+                                    searchPosts();
+                                }
+                            });
+                        }
+
+                        // Add keyboard support for people search
+                        const peopleSearchInput = document.getElementById('search-input');
+                        if (peopleSearchInput) {
+                            peopleSearchInput.addEventListener('keypress', function(e) {
+                                if (e.key === 'Enter') {
+                                    performSearch();
+                                }
+                            });
+                        }
+                    } else {
+                        // This runs for logged-out users.
+                        displayAuthError();
+                    }
+                });
             } catch (e) {
                 console.warn('Could not parse server data', e);
             }

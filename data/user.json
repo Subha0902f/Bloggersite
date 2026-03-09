@@ -1,12 +1,110 @@
 [
   {
     "id": "1709650000000",
-    "email": "subhadeepbose2021@gmail.com",
-    "password": "123456"
+    "email": "test@gmail.com",
+    "password": "test123",
+    "username": "testuser",
+    "name": "Test User",
+    "profile": {
+      "name": "Test User",
+      "bio": "Test account for demonstration",
+      "contact": "test@gmail.com",
+      "passions": [
+        "testing"
+      ]
+    }
   },
   {
     "id": "1709650000001",
-    "email": "subhadepbose42@gmail.com",
-    "password": "8584911678"
+    "email": "demo@gmail.com",
+    "password": "demo456",
+    "username": "demouser",
+    "name": "Demo User",
+    "profile": {
+      "name": "Demo User",
+      "bio": "Demo account",
+      "contact": "demo@gmail.com",
+      "passions": [
+        "demo"
+      ]
+    }
+  },
+  {
+    "id": "1772895541352",
+    "username": "Todi53",
+    "email": "subhadeepbose2021@gmail.com",
+    "password": "123456",
+    "name": "Subhadeep Bose",
+    "profile": {
+      "name": "Subhadeep Bose",
+      "bio": "Hello, I am Subhadeep, a passionate writer and a fool poet.\nYes I am happy.\nI am using vs code.\nI am solving problem.\n",
+      "contact": "subhadeepbose2021@gmail.com",
+      "passions": [
+        "rrr www xxx"
+      ],
+      "photo": "/uploads/profile_1772895592251.jpeg"
+    }
+  },
+  {
+    "id": "1772895690431",
+    "username": "deja vu",
+    "email": "subhadeepbose42@gmail.com",
+    "password": "8584911678",
+    "name": "Koyel ",
+    "profile": {
+      "name": "Koyel ",
+      "bio": "Hello, I am Subha's one and only girlfriend, Koyel!!!",
+      "contact": "subhadeepbose42@gmail.com",
+      "passions": [
+        "rrr www xxx"
+      ],
+      "photo": "/uploads/profile_1772895760792.webp"
+    }
+  },
+  {
+    "id": "1772960335326",
+    "username": "Tanjiro09",
+    "email": "subhadeepbose65@gmail.com",
+    "password": "369369",
+    "name": "Tanjiro Kamado",
+    "profile": {
+      "name": "Tanjiro Kamado",
+      "bio": "safdgb e5ryrysd",
+      "contact": "8584911678@axl",
+      "passions": [
+        "sfvawefe"
+      ],
+      "photo": null
+    }
+  },
+  {
+    "id": "1773075727373",
+    "username": "biker69",
+    "email": "souvik69@gmail.com",
+    "password": "69696969",
+    "name": "Souvik",
+    "profile": {
+      "name": "Souvik",
+      "username": "biker69",
+      "bio": "",
+      "contact": "",
+      "passions": []
+    }
+  },
+  {
+    "id": "1773079665817",
+    "username": "Kyojuro98",
+    "email": "kyo44@gmail.com",
+    "password": "123456",
+    "name": "Kyojuro Rengoku",
+    "profile": {
+      "name": "Kyojuro Rengoku",
+      "bio": "I am a fan of rengoku",
+      "contact": "kyojuro44@gmail.com",
+      "passions": [
+        "rrr www xxx"
+      ],
+      "photo": "/uploads/profile_1773079760245.webp"
+    }
   }
 ]
